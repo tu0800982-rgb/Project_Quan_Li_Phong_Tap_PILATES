@@ -49,9 +49,11 @@ public class PaymentService {
         if (target == PaymentStatus.PAID) {
             payment.setPaidAt(now);
             payment.setPerformedBy(actor);
-            LocalDate today = LocalDate.now();
-            memberPackage.setStartDate(today);
-            memberPackage.setEndDate(today.plusDays(memberPackage.getPilatesPackage().getDurationDays() - 1L));
+            LocalDate today = LocalDate.now(java.time.ZoneId.of("Asia/Ho_Chi_Minh"));
+            LocalDate startDate = memberPackage.getRenewedFrom() != null && memberPackage.getStartDate().isAfter(today)
+                    ? memberPackage.getStartDate() : today;
+            memberPackage.setStartDate(startDate);
+            memberPackage.setEndDate(startDate.plusDays(memberPackage.getPilatesPackage().getDurationDays() - 1L));
             memberPackage.setStatus(MemberPackageStatus.ACTIVE);
         } else if (target == PaymentStatus.FAILED) {
             payment.setPerformedBy(actor);

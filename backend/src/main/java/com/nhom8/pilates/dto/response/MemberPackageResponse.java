@@ -14,6 +14,7 @@ public class MemberPackageResponse {
     private final int totalSessions;
     private final int remainingSessions;
     private final String status;
+    private final Long renewedFromId;
 
     public MemberPackageResponse(MemberPackage source) {
         id = source.getId(); memberId = source.getMember().getId(); memberName = source.getMember().getFullName();
@@ -21,6 +22,7 @@ public class MemberPackageResponse {
         startDate = source.getStartDate(); endDate = source.getEndDate();
         totalSessions = source.getTotalSessions(); remainingSessions = source.getRemainingSessions();
         status = source.getStatus().name();
+        renewedFromId = source.getRenewedFrom() == null ? null : source.getRenewedFrom().getId();
     }
     public Long getId() { return id; }
     public Long getMemberId() { return memberId; }
@@ -32,4 +34,5 @@ public class MemberPackageResponse {
     public int getTotalSessions() { return totalSessions; }
     public int getRemainingSessions() { return remainingSessions; }
     public String getStatus() { return status; }
+    public Long getRenewedFromId() { return renewedFromId; }
 }

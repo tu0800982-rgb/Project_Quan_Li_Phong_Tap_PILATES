@@ -55,7 +55,8 @@ public class DashboardService {
                 .sorted((a,b) -> a.getSchedule().getStartsAt().compareTo(b.getSchedule().getStartsAt()))
                 .limit(5).map(ClassRegistrationResponse::new).toList();
         List<AttendanceResponse> recentAttendance=attendance.findByMemberIdOrderByScheduleStartsAtDesc(member.getId())
-                .stream().limit(5).map(AttendanceResponse::new).toList();
+                .stream().filter(item -> !item.getSchedule().getStartsAt().isAfter(now))
+                .limit(5).map(AttendanceResponse::new).toList();
         List<PaymentResponse> recentPayments=payments.findByMemberIdOrderByCreatedAtDesc(member.getId())
                 .stream().limit(5).map(PaymentResponse::new).toList();
         return new MemberDashboardResponse(new MemberResponse(member),active,upcoming,recentAttendance,recentPayments);

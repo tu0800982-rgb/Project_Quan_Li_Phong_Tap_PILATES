@@ -19,11 +19,13 @@ public class ReportService {
     private final PilatesPackageRepository packages; private final PilatesClassRepository classes;
     private final ClassScheduleRepository schedules; private final ClassRegistrationRepository registrations;
     private final AttendanceRepository attendance; private final PaymentRepository payments;
+    private final MemberPackageRepository memberPackages;
     public ReportService(MemberRepository members,EmployeeRepository employees,PilatesPackageRepository packages,
             PilatesClassRepository classes,ClassScheduleRepository schedules,ClassRegistrationRepository registrations,
-            AttendanceRepository attendance,PaymentRepository payments) {
+            AttendanceRepository attendance,PaymentRepository payments,MemberPackageRepository memberPackages) {
         this.members=members;this.employees=employees;this.packages=packages;this.classes=classes;
         this.schedules=schedules;this.registrations=registrations;this.attendance=attendance;this.payments=payments;
+        this.memberPackages=memberPackages;
     }
 
     @Transactional(readOnly=true)
@@ -41,9 +43,11 @@ public class ReportService {
                 employees.countByStatus(RecordStatus.ACTIVE),packages.countByStatus(RecordStatus.ACTIVE),
                 classes.countByStatus(RecordStatus.ACTIVE),periodSchedules.size(),
                 registrations.countByRegisteredAtGreaterThanEqualAndRegisteredAtLessThan(r.start,r.endExclusive),
-                attendance.countByMarkedAtGreaterThanEqualAndMarkedAtLessThan(r.start,r.endExclusive),
+                attendance.countByMarkedAtInPast(r.start,r.endExclusive,Instant.now()),
                 payments.countByCreatedAtGreaterThanEqualAndCreatedAtLessThan(r.start,r.endExclusive),
-                payments.sumAmountByStatusAndPaidAt(PaymentStatus.PAID,r.start,r.endExclusive),fill);
+                payments.sumAmountByStatusAndPaidAt(PaymentStatus.PAID,r.start,r.endExclusive),fill,
+                memberPackages.countByStatus(MemberPackageStatus.EXPIRED)
+                        + memberPackages.countByStatusAndEndDateBefore(MemberPackageStatus.ACTIVE, LocalDate.now(ZONE)));
     }
 
     @Transactional(readOnly=true)
@@ -52,7 +56,7 @@ public class ReportService {
         return new StaffDashboardResponse(today,members.countByStatus(RecordStatus.ACTIVE),
                 schedules.findForReport(r.start,r.endExclusive).size(),
                 registrations.countByRegisteredAtGreaterThanEqualAndRegisteredAtLessThan(r.start,r.endExclusive),
-                attendance.countByMarkedAtGreaterThanEqualAndMarkedAtLessThan(r.start,r.endExclusive),
+                attendance.countByMarkedAtInPast(r.start,r.endExclusive,Instant.now()),
                 payments.countByCreatedAtGreaterThanEqualAndCreatedAtLessThan(r.start,r.endExclusive));
     }
 

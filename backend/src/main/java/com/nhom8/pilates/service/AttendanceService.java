@@ -63,7 +63,7 @@ public class AttendanceService {
     public List<AttendanceResponse> save(Long scheduleId, SaveAttendanceRequest request) {
         User actor=currentUserService.requireUser();
         ClassSchedule schedule=requireAuthorizedSchedule(actor,scheduleId);
-        if (schedule.getStartsAt().isAfter(Instant.now()) && actor.getRole().getCode()==RoleCode.TRAINER)
+        if (schedule.getStartsAt().isAfter(Instant.now()))
             throw new BusinessException("ATTENDANCE_TOO_EARLY", "Chưa đến giờ bắt đầu lớp học", HttpStatus.CONFLICT);
         Set<Long> uniqueMembers=new HashSet<>();
         for (AttendanceItemRequest item:request.getItems()) {
@@ -87,8 +87,31 @@ public class AttendanceService {
         User actor=currentUserService.requireUser();
         Member member=memberRepository.findByUserId(actor.getId())
                 .orElseThrow(() -> new BusinessException("MEMBER_PROFILE_NOT_FOUND", "Không có hồ sơ hội viên", HttpStatus.NOT_FOUND));
+        Instant now=Instant.now();
         return attendanceRepository.findByMemberIdOrderByScheduleStartsAtDesc(member.getId()).stream()
+                .filter(item -> !item.getSchedule().getStartsAt().isAfter(now))
                 .map(AttendanceResponse::new).toList();
+    }
+
+    @Transactional(readOnly=true)
+    public List<AttendanceResponse> history() {
+        User actor=currentUserService.requireUser();
+        RoleCode role=actor.getRole().getCode();
+        if (role==RoleCode.ADMIN || role==RoleCode.STAFF) {
+            Instant now=Instant.now();
+            return attendanceRepository.findAllByOrderByScheduleStartsAtDesc().stream()
+                    .filter(item -> !item.getSchedule().getStartsAt().isAfter(now))
+                    .map(AttendanceResponse::new).toList();
+        }
+        if (role==RoleCode.TRAINER) {
+            Employee trainer=employeeRepository.findByUserId(actor.getId())
+                    .orElseThrow(() -> new BusinessException("TRAINER_PROFILE_NOT_FOUND", "Trainer profile not found", HttpStatus.NOT_FOUND));
+            Instant now=Instant.now();
+            return attendanceRepository.findByScheduleTrainerIdOrderByScheduleStartsAtDesc(trainer.getId()).stream()
+                    .filter(item -> !item.getSchedule().getStartsAt().isAfter(now))
+                    .map(AttendanceResponse::new).toList();
+        }
+        throw new BusinessException("ACCESS_DENIED", "Role cannot view attendance history", HttpStatus.FORBIDDEN);
     }
 
     private Attendance saveOne(ClassSchedule schedule, ClassRegistration registration,

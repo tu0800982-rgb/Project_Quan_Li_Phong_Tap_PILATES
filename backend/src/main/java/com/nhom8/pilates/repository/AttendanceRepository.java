@@ -16,6 +16,11 @@ public interface AttendanceRepository extends JpaRepository<Attendance, Long> {
 
     @EntityGraph(attributePaths = {"schedule", "schedule.pilatesClass", "member", "registration"})
     List<Attendance> findByMemberIdOrderByScheduleStartsAtDesc(Long memberId);
+    @EntityGraph(attributePaths = {"schedule", "schedule.pilatesClass", "schedule.trainer", "member", "registration"})
+    List<Attendance> findAllByOrderByScheduleStartsAtDesc();
+    @EntityGraph(attributePaths = {"schedule", "schedule.pilatesClass", "schedule.trainer", "member", "registration"})
+    List<Attendance> findByScheduleTrainerIdOrderByScheduleStartsAtDesc(Long trainerId);
     List<Attendance> findByScheduleId(Long scheduleId);
-    long countByMarkedAtGreaterThanEqualAndMarkedAtLessThan(Instant from,Instant to);
+    @Query("select count(a) from Attendance a where a.markedAt>=:from and a.markedAt<:to and a.schedule.startsAt<=:now")
+    long countByMarkedAtInPast(@Param("from") Instant from,@Param("to") Instant to,@Param("now") Instant now);
 }

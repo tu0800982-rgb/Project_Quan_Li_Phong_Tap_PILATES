@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
+import com.nhom8.pilates.enums.PaymentMethod;
 
 @RestController
 @RequestMapping("/api/v1/member-packages")
@@ -20,6 +21,14 @@ public class MemberPackageController {
     @PreAuthorize("hasAnyRole('ADMIN','STAFF','MEMBER')")
     public ApiResponse<PackageRegistrationResponse> register(@Valid @RequestBody RegisterPackageRequest request) {
         return ApiResponse.success("Đăng ký gói thành công, giao dịch đang chờ xác nhận", service.register(request));
+    }
+
+    @PostMapping("/{id}/renew")
+    @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("hasAnyRole('ADMIN','STAFF','MEMBER')")
+    public ApiResponse<PackageRegistrationResponse> renew(@PathVariable Long id,
+                                                           @RequestParam PaymentMethod paymentMethod) {
+        return ApiResponse.success("Renewal request created", service.renew(id, paymentMethod));
     }
 
     @GetMapping("/me")

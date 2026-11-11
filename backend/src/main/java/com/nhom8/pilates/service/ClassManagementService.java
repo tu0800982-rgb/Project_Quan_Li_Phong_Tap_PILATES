@@ -124,4 +124,23 @@ public class ClassManagementService {
         return schedules.stream().map(s -> new ScheduleResponse(s,
                 registrationRepository.countByScheduleIdAndStatus(s.getId(),RegistrationStatus.REGISTERED))).toList();
     }
+
+    @Transactional(readOnly=true)
+    public List<ScheduleResponse> listSchedules() {
+        User actor=currentUserService.requireUser();
+        List<ClassSchedule> schedules;
+        if (actor.getRole().getCode()==RoleCode.MEMBER) {
+            schedules=scheduleRepository.findUpcoming(Instant.now()).stream()
+                    .filter(s -> s.getStatus()==ScheduleStatus.OPEN).toList();
+        } else {
+            schedules=scheduleRepository.findAllDetailed();
+            if (actor.getRole().getCode()==RoleCode.TRAINER) {
+                Employee trainer=employeeRepository.findByUserId(actor.getId())
+                        .orElseThrow(() -> new BusinessException("TRAINER_PROFILE_NOT_FOUND", "Không có hồ sơ huấn luyện viên", HttpStatus.NOT_FOUND));
+                schedules=schedules.stream().filter(s -> s.getTrainer().getId().equals(trainer.getId())).toList();
+            }
+        }
+        return schedules.stream().map(s -> new ScheduleResponse(s,
+                registrationRepository.countByScheduleIdAndStatus(s.getId(),RegistrationStatus.REGISTERED))).toList();
+    }
 }

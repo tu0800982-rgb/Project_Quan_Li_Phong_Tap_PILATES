@@ -26,7 +26,7 @@ public class ClassController {
     @PatchMapping("/classes/{id}/status") @PreAuthorize("hasAnyRole('ADMIN','STAFF')")
     public ApiResponse<ClassResponse> updateClassStatus(@PathVariable Long id,@Valid @RequestBody UpdateRecordStatusRequest request){return ApiResponse.success("Cập nhật trạng thái lớp thành công",service.updateClassStatus(id,request.getStatus()));}
     @GetMapping("/schedules")
-    public ApiResponse<List<ScheduleResponse>> schedules(){return ApiResponse.success("Lấy lịch học thành công",service.upcoming());}
+    public ApiResponse<List<ScheduleResponse>> schedules(){return ApiResponse.success("Lấy lịch học thành công",service.listSchedules());}
     @PostMapping("/schedules") @ResponseStatus(HttpStatus.CREATED) @PreAuthorize("hasAnyRole('ADMIN','STAFF')")
     public ApiResponse<ScheduleResponse> createSchedule(@Valid @RequestBody CreateScheduleRequest request){
         return ApiResponse.success("Tạo lịch học thành công",service.createSchedule(request));

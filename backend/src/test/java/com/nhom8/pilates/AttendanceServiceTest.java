@@ -5,11 +5,13 @@ import com.nhom8.pilates.entity.*;
 import com.nhom8.pilates.enums.*;
 import com.nhom8.pilates.repository.*;
 import com.nhom8.pilates.service.*;
+import com.nhom8.pilates.exception.BusinessException;
 import org.junit.jupiter.api.Test;
 import java.lang.reflect.Field;
 import java.time.Instant;
 import java.util.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
 class AttendanceServiceTest {
@@ -54,6 +56,33 @@ class AttendanceServiceTest {
         assertEquals(5,memberPackage.getRemainingSessions());
         verify(ledgerRepository,never()).save(any());
         verify(memberPackageRepository,never()).save(any());
+    }
+
+    @Test
+    void futureClassCannotBeMarkedByStaff() throws Exception {
+        AttendanceRepository attendanceRepository=mock(AttendanceRepository.class);
+        ClassScheduleRepository scheduleRepository=mock(ClassScheduleRepository.class);
+        ClassRegistrationRepository registrationRepository=mock(ClassRegistrationRepository.class);
+        MemberPackageRepository memberPackageRepository=mock(MemberPackageRepository.class);
+        MemberRepository memberRepository=mock(MemberRepository.class);
+        EmployeeRepository employeeRepository=mock(EmployeeRepository.class);
+        SessionUsageLedgerRepository ledgerRepository=mock(SessionUsageLedgerRepository.class);
+        CurrentUserService currentUserService=mock(CurrentUserService.class);
+        AttendanceService service=new AttendanceService(attendanceRepository,scheduleRepository,
+                registrationRepository,memberPackageRepository,memberRepository,employeeRepository,
+                ledgerRepository,currentUserService,1,1,0,mock(AuditService.class));
+
+        User staff=new User(); staff.setId(1L); staff.setRole(new Role(RoleCode.STAFF,"Nhân viên"));
+        when(currentUserService.requireUser()).thenReturn(staff);
+        ClassSchedule schedule=new ClassSchedule(); setId(schedule,4L);
+        schedule.setStartsAt(Instant.now().plusSeconds(3600));
+        when(scheduleRepository.findDetailedById(4L)).thenReturn(Optional.of(schedule));
+        AttendanceItemRequest item=new AttendanceItemRequest(); item.setMemberId(2L); item.setStatus(AttendanceStatus.PRESENT);
+        SaveAttendanceRequest request=new SaveAttendanceRequest(); request.setItems(List.of(item));
+
+        BusinessException error=assertThrows(BusinessException.class,() -> service.save(4L,request));
+        assertEquals("ATTENDANCE_TOO_EARLY",error.getCode());
+        verifyNoInteractions(registrationRepository,attendanceRepository);
     }
 
     private void setId(Object target,Long id) throws Exception {

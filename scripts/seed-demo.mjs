@@ -115,6 +115,7 @@ for (let scheduleIndex = 0; scheduleIndex < schedules.length; scheduleIndex += 1
 
 let seededAttendance = 0;
 for (const schedule of schedules) {
+  if (new Date(schedule.startsAt).getTime() > Date.now()) continue;
   const roster = await call(`/schedules/${schedule.id}/attendance-roster`);
   if (!roster.length) continue;
   await call(`/schedules/${schedule.id}/attendance`, { method:'PUT', body:{items:roster.map((item,index) => ({memberId:item.memberId, status:['PRESENT','ABSENT','EXCUSED'][index % 3]}))} });

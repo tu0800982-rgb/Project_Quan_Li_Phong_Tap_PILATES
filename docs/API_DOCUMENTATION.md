@@ -74,4 +74,11 @@ STAFF không nhận doanh thu; TRAINER và MEMBER không truy cập báo cáo to
 
 ## HTTP status
 
+## Bổ sung nghiệp vụ gói và báo cáo
+
+- `POST /member-packages/{id}/renew?paymentMethod=CASH|BANK_TRANSFER|CARD`: tạo gói gia hạn ở trạng thái `PENDING_PAYMENT`, liên kết với gói cũ qua `renewedFrom`; MEMBER chỉ được gia hạn gói của chính mình.
+- Gói `ACTIVE` có `endDate` trước ngày hiện tại được chuẩn hóa sang `EXPIRED` khi tải danh sách gói. Báo cáo cũng tính cả gói đã lưu `EXPIRED` và gói ACTIVE đã quá hạn.
+- `PATCH /payments/{id}/status` với `status=PAID` xác nhận giao dịch pending và kích hoạt đúng member package liên kết. Giao diện thanh toán ưu tiên luồng này để tránh tạo gói trùng.
+- `GET /reports/overview?from=YYYY-MM-DD&to=YYYY-MM-DD` trả về số hội viên, gói hết hạn, lịch học, đăng ký, điểm danh, giao dịch, doanh thu và tỷ lệ lấp đầy trong khoảng chọn.
+
 `200`, `201`, `400`, `401`, `403`, `404`, `409`, `422`, `500`. Các lỗi nghiệp vụ có mã ổn định như `CLASS_FULL`, `SCHEDULE_CONFLICT`, `DUPLICATE_REGISTRATION`, `NO_SESSIONS_LEFT` và `INVALID_PAYMENT_TRANSITION`.

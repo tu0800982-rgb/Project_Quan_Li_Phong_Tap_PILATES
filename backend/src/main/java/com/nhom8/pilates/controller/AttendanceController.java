@@ -27,6 +27,12 @@ public class AttendanceController {
         return ApiResponse.success("Lưu điểm danh thành công",service.save(id,request));
     }
 
+    @GetMapping("/attendance/history")
+    @PreAuthorize("hasAnyRole('ADMIN','STAFF','TRAINER')")
+    public ApiResponse<List<AttendanceResponse>> history(){
+        return ApiResponse.success("Attendance history loaded",service.history());
+    }
+
     @GetMapping("/attendance/me")
     @PreAuthorize("hasRole('MEMBER')")
     public ApiResponse<List<AttendanceResponse>> mine(){

@@ -16,7 +16,7 @@ const pack = x => ({...x, id:id(x.id), code:x.packageCode, type:(x.classTypes ||
   duration:Math.max(1, Math.round(x.durationDays / 30)), sessions:x.sessionCount,
   allowedClasses:x.classTypes || [], status:lower(x.status)});
 const membership = x => ({...x, id:id(x.id), memberId:id(x.memberId), packageId:id(x.packageId),
-  expiryDate:x.endDate, status:lower(x.status)});
+  expiryDate:x.endDate, status:lower(x.status), renewedFromId:id(x.renewedFromId)});
 const schedule = x => ({...x, id:id(x.id), classId:id(x.classId), code:x.classCode, name:x.className,
   type:x.classType, trainerId:id(x.trainerId), date:datePart(x.startsAt), startTime:timePart(x.startsAt),
   endTime:timePart(x.endsAt), status:lower(x.status === 'OPEN' ? 'active' : x.status)});
@@ -65,7 +65,15 @@ export const repo = {
     }
   },
   dashboard: {get: user => request(`/dashboard/${lower(user.role)}`)},
-  reports: {overview: () => request('/reports/overview')},
+  reports: {
+    overview: (from, to) => {
+      const params = new URLSearchParams();
+      if (from) params.set('from', from);
+      if (to) params.set('to', to);
+      const query = params.toString();
+      return request(`/reports/overview${query ? `?${query}` : ''}`);
+    }
+  },
   members: {
     list: async user => {
       if (user?.role === 'MEMBER') return [user];
@@ -186,6 +194,10 @@ export const repo = {
         packageId:numberId(data.packageId), paymentMethod:data.paymentMethod || 'CASH'
       });
       return membership(result.memberPackage);
+    },
+    renew: async (_, memberPackageId, paymentMethod = 'CASH') => {
+      const result = await request(`/member-packages/${numberId(memberPackageId)}/renew?paymentMethod=${encodeURIComponent(paymentMethod)}`, 'POST');
+      return {membership: membership(result.memberPackage), payment: result.payment};
     }
   },
   registrations: {
@@ -205,12 +217,8 @@ export const repo = {
   attendance: {
     list: async user => {
       if (user.role === 'MEMBER') return (await request('/attendance/me')).map(attendance);
-      if (user.role !== 'TRAINER') return [];
-      const groups = await trainerRosterData();
-      return groups.flatMap(({schedule:item, roster}) => roster.filter(x => x.attendanceStatus).map(x => ({
-        id:`${item.id}-${x.memberId}`, classId:id(item.id), memberId:id(x.memberId), date:datePart(item.startsAt),
-        status:lower(x.attendanceStatus)
-      })));
+      if (['ADMIN','STAFF','TRAINER'].includes(user.role)) return (await request('/attendance/history')).map(attendance);
+      return [];
     },
     roster: async scheduleId => request(`/schedules/${numberId(scheduleId)}/attendance-roster`),
     save: async (_, scheduleOrItems, explicitItems) => {
@@ -227,7 +235,7 @@ export const repo = {
     create: async (_, data) => {
       const result = await request('/member-packages', 'POST', {
         memberId:numberId(data.memberId), packageId:numberId(data.packageId),
-        paymentMethod:({'Tiền mặt':'CASH','Chuyển khoản':'BANK_TRANSFER','Thẻ':'CARD'})[data.method] || 'CASH'
+        paymentMethod:({'Tiền mặt':'CASH','Chuyển khoản':'BANK_TRANSFER','Thẻ':'CARD'})[data.method] || String(data.method || 'CASH').toUpperCase()
       });
       const confirmed = await request(`/payments/${result.payment.id}/status`, 'PATCH', {status:'PAID', reason:null});
       return payment(confirmed);

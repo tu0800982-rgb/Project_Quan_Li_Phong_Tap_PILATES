@@ -20,6 +20,10 @@ public interface ClassScheduleRepository extends JpaRepository<ClassSchedule, Lo
             "where s.startsAt >= :from order by s.startsAt")
     List<ClassSchedule> findUpcoming(@Param("from") Instant from);
 
+    @Query("select s from ClassSchedule s join fetch s.pilatesClass c join fetch c.classType join fetch s.trainer " +
+            "order by s.startsAt")
+    List<ClassSchedule> findAllDetailed();
+
     @Query("select count(s) from ClassSchedule s where s.trainer.id=:trainerId and s.status <> 'CANCELLED' " +
             "and s.startsAt < :endsAt and s.endsAt > :startsAt")
     long countTrainerConflicts(@Param("trainerId") Long trainerId, @Param("startsAt") Instant startsAt,

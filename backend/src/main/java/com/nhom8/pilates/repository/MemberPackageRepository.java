@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 import java.util.Optional;
+import java.time.LocalDate;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
@@ -21,4 +22,8 @@ public interface MemberPackageRepository extends JpaRepository<MemberPackage, Lo
     Optional<MemberPackage> findEligibleByIdForUpdate(@Param("id") Long id);
     @EntityGraph(attributePaths = {"pilatesPackage", "member"})
     List<MemberPackage> findByMemberIdAndStatusOrderByEndDateDesc(Long memberId,MemberPackageStatus status);
+    List<MemberPackage> findByStatusAndEndDateBefore(MemberPackageStatus status, LocalDate date);
+    Optional<MemberPackage> findFirstByRenewedFromIdAndStatus(Long renewedFromId, MemberPackageStatus status);
+    long countByStatus(MemberPackageStatus status);
+    long countByStatusAndEndDateBefore(MemberPackageStatus status, LocalDate date);
 }

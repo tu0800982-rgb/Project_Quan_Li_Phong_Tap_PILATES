@@ -14,7 +14,7 @@ class ReportServiceTest {
         ReportService service=new ReportService(mock(MemberRepository.class),mock(EmployeeRepository.class),
                 mock(PilatesPackageRepository.class),mock(PilatesClassRepository.class),
                 mock(ClassScheduleRepository.class),mock(ClassRegistrationRepository.class),
-                mock(AttendanceRepository.class),mock(PaymentRepository.class));
+                mock(AttendanceRepository.class),mock(PaymentRepository.class),mock(MemberPackageRepository.class));
         BusinessException error=assertThrows(BusinessException.class,
                 () -> service.overview(LocalDate.of(2026,11,6),LocalDate.of(2026,11,5)));
         assertEquals("INVALID_DATE_RANGE",error.getCode());
