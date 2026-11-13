@@ -53,11 +53,40 @@ export async function memberPackagesPage(el, user) {
 export async function attendanceHistoryPage(el, user) {
   const records = await repo.attendance.list(user);
   const formatDate = value => value ? new Date(value).toLocaleString('vi-VN') : '—';
-  el.innerHTML = pageHead('Lịch sử điểm danh', user.role === 'MEMBER'
-    ? 'Kết quả điểm danh của bạn.'
-    : user.role === 'TRAINER' ? 'Chỉ hiển thị hội viên thuộc các lớp bạn phụ trách.'
-    : 'Tra cứu lịch sử điểm danh của toàn bộ hội viên.') +
-    table(['Thời gian lớp', 'Hội viên', 'Lớp học', 'Trạng thái', 'Thời điểm ghi nhận'], records.map(item => `<tr><td>${formatDate(item.startsAt)}</td><td>${esc(item.memberName || '—')}</td><td>${esc(item.className || '—')}</td><td>${badge(String(item.status || '').toLowerCase())}</td><td>${formatDate(item.markedAt)}</td></tr>`).join(''));
+  const filters = {search:'', status:'', from:'', to:''};
+  const render = () => {
+    const query = filters.search.trim().toLocaleLowerCase('vi');
+    const visibleRecords = records.filter(item => {
+      const searchable = [item.memberName, item.className].filter(Boolean).join(' ').toLocaleLowerCase('vi');
+      const status = String(item.status || '').toLowerCase();
+      const attendanceDate = String(item.startsAt || item.markedAt || item.date || '').slice(0, 10);
+      return (!query || searchable.includes(query)) &&
+        (!filters.status || status === filters.status) &&
+        (!filters.from || attendanceDate >= filters.from) &&
+        (!filters.to || attendanceDate <= filters.to);
+    });
+
+    el.innerHTML = pageHead('Lịch sử điểm danh', user.role === 'MEMBER'
+      ? 'Kết quả điểm danh của bạn.'
+      : user.role === 'TRAINER' ? 'Chỉ hiển thị hội viên thuộc các lớp bạn phụ trách.'
+      : 'Tra cứu lịch sử điểm danh của toàn bộ hội viên.') +
+      `<div class="card payment-filters attendance-filters"><div class="attendance-filter-grid"><label class="payment-filter-search"><span class="label">Tra cứu điểm danh</span><input id="attendance-search" class="field" type="search" placeholder="Tên hội viên hoặc lớp học" value="${esc(filters.search)}"></label><label><span class="label">Trạng thái</span><select id="attendance-status" class="field"><option value="">Tất cả trạng thái</option><option value="present" ${filters.status === 'present' ? 'selected' : ''}>Có mặt</option><option value="absent" ${filters.status === 'absent' ? 'selected' : ''}>Vắng mặt</option><option value="excused" ${filters.status === 'excused' ? 'selected' : ''}>Có phép</option></select></label><label><span class="label">Từ ngày</span><input id="attendance-from" class="field" type="date" value="${filters.from}"></label><label><span class="label">Đến ngày</span><input id="attendance-to" class="field" type="date" value="${filters.to}"></label><button class="btn btn-soft payment-clear" id="clear-attendance-filters" type="button">Xóa lọc</button></div><small class="muted">Hiển thị ${visibleRecords.length}/${records.length} kết quả điểm danh.</small></div>` +
+      table(['Thời gian lớp', 'Hội viên', 'Lớp học', 'Trạng thái', 'Thời điểm ghi nhận'], visibleRecords.map(item => `<tr><td>${formatDate(item.startsAt)}</td><td>${esc(item.memberName || '—')}</td><td>${esc(item.className || '—')}</td><td>${badge(String(item.status || '').toLowerCase())}</td><td>${formatDate(item.markedAt)}</td></tr>`).join(''), 'Không tìm thấy kết quả điểm danh phù hợp.');
+
+    const rerenderWithFocus = event => {
+      const cursor = event?.target?.selectionStart;
+      render();
+      const search = el.querySelector('#attendance-search');
+      search?.focus();
+      if (search && typeof cursor === 'number') search.setSelectionRange(cursor, cursor);
+    };
+    el.querySelector('#attendance-search').oninput = event => { filters.search = event.target.value; rerenderWithFocus(event); };
+    el.querySelector('#attendance-status').onchange = event => { filters.status = event.target.value; render(); };
+    el.querySelector('#attendance-from').onchange = event => { filters.from = event.target.value; render(); };
+    el.querySelector('#attendance-to').onchange = event => { filters.to = event.target.value; render(); };
+    el.querySelector('#clear-attendance-filters').onclick = () => { Object.keys(filters).forEach(key => { filters[key] = ''; }); render(); };
+  };
+  render();
 }
 
 const reportDate = date => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;

@@ -2,6 +2,7 @@
 .payment-filter-grid{display:grid;grid-template-columns:minmax(240px,2fr) repeat(4,minmax(130px,1fr)) auto;align-items:end;gap:12px;margin-bottom:10px}
 .payment-filter-search{min-width:0}
 .payment-clear{height:42px;white-space:nowrap}
+.attendance-filter-grid{display:grid;grid-template-columns:minmax(260px,2fr) repeat(3,minmax(150px,1fr)) auto;align-items:end;gap:12px;margin-bottom:10px}
 .dashboard-members{margin-top:20px}
 .dashboard-section-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px}
 .dashboard-section-head h2{margin:0;color:var(--espresso);font-size:22px}
@@ -54,6 +55,6 @@
 .report-members .table-wrap,.report-classes .table-wrap{box-shadow:none;border-radius:12px}
 .member-report-tools{display:grid;grid-template-columns:1fr 220px;gap:12px;margin-bottom:14px}
 .member-report-tools .field{margin-top:0}
-@media(max-width:1200px){.payment-filter-grid{grid-template-columns:2fr 1fr 1fr 1fr 1fr}.payment-clear{grid-column:1/-1;justify-self:start}}
-@media(max-width:900px){.report-chart-grid{grid-template-columns:1fr}.report-custom-filter{grid-template-columns:1fr 1fr}.report-custom-filter>div{grid-column:1/-1}.payment-filter-grid{grid-template-columns:1fr 1fr}.member-report-tools{grid-template-columns:1fr}}
-@media(max-width:640px){.report-toolbar{align-items:flex-start;flex-direction:column}.report-periods{width:100%;justify-content:space-between}.report-period{padding:9px 11px}.report-stat-grid{grid-template-columns:1fr 1fr}.report-custom-filter{grid-template-columns:1fr}.report-custom-filter>div{grid-column:auto}.report-panel{padding:16px}.report-bars{gap:5px}.report-bar-value{font-size:9px}.report-line-labels{padding:0 4px}.payment-filter-grid{grid-template-columns:1fr}.payment-clear{grid-column:auto;justify-self:stretch}.dashboard-section-head{align-items:flex-start;flex-direction:column}.dashboard-members .table-wrap{margin:0 -8px}}
+@media(max-width:1200px){.payment-filter-grid{grid-template-columns:2fr 1fr 1fr 1fr 1fr}.attendance-filter-grid{grid-template-columns:2fr 1fr 1fr 1fr}.payment-clear{grid-column:1/-1;justify-self:start}}
+@media(max-width:900px){.report-chart-grid{grid-template-columns:1fr}.report-custom-filter{grid-template-columns:1fr 1fr}.report-custom-filter>div{grid-column:1/-1}.payment-filter-grid,.attendance-filter-grid{grid-template-columns:1fr 1fr}.member-report-tools{grid-template-columns:1fr}}
+@media(max-width:640px){.report-toolbar{align-items:flex-start;flex-direction:column}.report-periods{width:100%;justify-content:space-between}.report-period{padding:9px 11px}.report-stat-grid{grid-template-columns:1fr 1fr}.report-custom-filter{grid-template-columns:1fr}.report-custom-filter>div{grid-column:auto}.report-panel{padding:16px}.report-bars{gap:5px}.report-bar-value{font-size:9px}.report-line-labels{padding:0 4px}.payment-filter-grid,.attendance-filter-grid{grid-template-columns:1fr}.payment-clear{grid-column:auto;justify-self:stretch}.dashboard-section-head{align-items:flex-start;flex-direction:column}.dashboard-members .table-wrap{margin:0 -8px}}
