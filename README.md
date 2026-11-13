@@ -27,8 +27,16 @@ Tài khoản ứng dụng cần `SELECT, INSERT, UPDATE, DELETE` trên `pilates_
 ## Chạy backend
 
 ```powershell
-cd backend
-mvn clean test
+cd C:\Users\LEGION\PTPTPM\backend
+
+$env:DB_URL='jdbc:mysql://127.0.0.1:3306/pilates_studio?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true'
+
+$env:DB_USERNAME='pilates_app'
+
+$env:DB_PASSWORD='MatKhauMoiCuaBan'
+
+$env:DEMO_DATA_ENABLED='false'
+
 mvn spring-boot:run
 ```
 
@@ -39,7 +47,9 @@ Kiểm tra: `http://127.0.0.1:8080/actuator/health`.
 Tại thư mục gốc:
 
 ```powershell
-python -m http.server 5173 --directory frontend
+cd C:\Users\LEGION\PTPTPM
+
+npm start
 ```
 
 Mở `http://127.0.0.1:5173`. API base được suy ra theo hostname hiện tại và cổng backend 8080.
