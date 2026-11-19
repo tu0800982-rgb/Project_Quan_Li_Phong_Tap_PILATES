@@ -19,7 +19,7 @@ const membership = x => ({...x, id:id(x.id), memberId:id(x.memberId), packageId:
   expiryDate:x.endDate, status:lower(x.status), renewedFromId:id(x.renewedFromId)});
 const schedule = x => ({...x, id:id(x.id), classId:id(x.classId), code:x.classCode, name:x.className,
   type:x.classType, trainerId:id(x.trainerId), date:datePart(x.startsAt), startTime:timePart(x.startsAt),
-  endTime:timePart(x.endsAt), status:lower(x.status === 'OPEN' ? 'active' : x.status)});
+  endTime:timePart(x.endsAt), status:lower(x.status === 'OPEN' ? 'active' : x.status === 'CLOSED' ? 'inactive' : x.status)});
 const registration = x => ({...x, id:id(x.id), classId:id(x.scheduleId), memberId:id(x.memberId),
   registeredAt:x.registeredAt || x.startsAt || '', status:lower(x.status === 'REGISTERED' ? 'active' : x.status)});
 const attendance = x => ({...x, id:id(x.id), classId:id(x.scheduleId), memberId:id(x.memberId),

@@ -68,7 +68,62 @@ memberPackages=memberPackagesPage;
 reports=reportsPage;
 payments=paymentsPage;
 const baseCrud=crud;
-crud=async(el,u,key)=>{await baseCrud(el,u,key);if(key==='employees')enhanceEmployeeViews(el,u);};
+async function classesCrud(el,u){
+  const c=configs.classes;
+  let rows=await repo.classes.list(u);
+  let page=1;
+  const filters={search:'',status:'',from:'',to:''};
+  const writable=canManage(u.role);
+  const scheduleDate=item=>String(item.date||item.startsAt||'').slice(0,10);
+  const openForm=item=>{
+    const fields=c.fields.map(field=>field.name==='trainerId'?{...field,options:db.users.filter(user=>user.role==='TRAINER').map(user=>[user.id,user.name])}:field);
+    const root=modal(item?'Chỉnh sửa':'Thêm mới',`<form id="entity-form" class="form-grid">${formFields(fields,item||{})}<button class="btn btn-primary form-full">Lưu thông tin</button></form>`);
+    root.querySelector('form').onsubmit=async event=>{
+      event.preventDefault();
+      const data=getForm(event.target);
+      data.capacity=Number(data.capacity);
+      try{
+        item?await repo.classes.update(u,item.id,data):await repo.classes.create(u,data);
+        root.remove();
+        rows=await repo.classes.list(u);
+        render();
+        toast('Đã lưu thông tin.');
+      }catch(error){toast(error.message)}
+    };
+  };
+  const view=item=>modal('Chi tiết',`<dl>${Object.entries(item).filter(([key])=>key!=='id').map(([key,rawValue])=>{const raw=Array.isArray(rawValue)?rawValue.join(', '):rawValue;return `<div class="list-row"><dt>${fieldLabels[key]||key}</dt><dd>${esc(valueLabels[raw]||raw)}</dd></div>`}).join('')}</dl>`);
+  const render=()=>{
+    const query=filters.search.trim().toLocaleLowerCase('vi');
+    const filtered=rows.filter(item=>{
+      const searchable=[item.name,item.code,item.type,item.trainerName,item.location].filter(Boolean).join(' ').toLocaleLowerCase('vi');
+      const status=String(item.status||'').toLowerCase();
+      const date=scheduleDate(item);
+      return (!query||searchable.includes(query))&&(!filters.status||status===filters.status)&&(!filters.from||date>=filters.from)&&(!filters.to||date<=filters.to);
+    });
+    const pages=Math.max(1,Math.ceil(filtered.length/10));
+    page=Math.min(page,pages);
+    const shown=filtered.slice((page-1)*10,page*10);
+    const body=shown.map(item=>`<tr><td><b>${esc(item.name)}</b><br><small>${esc(item.code||'—')}</small></td><td>${esc(item.date||'—')} · ${esc(item.startTime||'—')}–${esc(item.endTime||'—')}</td><td>${item.registered}/${item.capacity}</td><td>${badge(item.status)}</td><td><div class="actions"><button data-view="${item.id}">Xem</button>${writable?`<button data-edit="${item.id}">Sửa</button><button class="danger" data-remove="${item.id}">Xóa</button>`:''}</div></td></tr>`).join('');
+    el.innerHTML=head(c.title,c.sub,writable?'<button class="btn btn-primary" id="add">＋ Thêm mới</button>':'')+
+      `<div class="card payment-filters class-filters"><div class="class-filter-grid"><label class="payment-filter-search"><span class="label">Tìm kiếm lớp học</span><input id="class-search" class="field" type="search" placeholder="Tên, mã lớp, HLV hoặc địa điểm" value="${esc(filters.search)}"></label><label><span class="label">Trạng thái hoạt động</span><select id="class-status" class="field"><option value="">Tất cả trạng thái</option><option value="active" ${filters.status==='active'?'selected':''}>Đang mở</option><option value="inactive" ${filters.status==='inactive'?'selected':''}>Ngừng hoạt động</option><option value="cancelled" ${filters.status==='cancelled'?'selected':''}>Đã hủy</option></select></label><label><span class="label">Từ ngày</span><input id="class-from" class="field" type="date" value="${filters.from}"></label><label><span class="label">Đến ngày</span><input id="class-to" class="field" type="date" value="${filters.to}"></label><button class="btn btn-soft payment-clear" id="clear-class-filters" type="button">Xóa lọc</button></div><small class="muted">Hiển thị ${filtered.length}/${rows.length} lớp học và lịch tập · trang ${page}/${pages}.</small></div>`+
+      table(c.headers,body,'Không tìm thấy lớp học hoặc lịch tập phù hợp.')+
+      `<div style="display:flex;gap:8px;margin-top:14px"><button class="btn btn-soft" id="prev" ${page===1?'disabled':''}>‹ Trước</button><button class="btn btn-soft" id="next" ${page===pages?'disabled':''}>Sau ›</button></div>`;
+    const rerenderWithFocus=event=>{const cursor=event.target.selectionStart;filters.search=event.target.value;page=1;render();const search=el.querySelector('#class-search');search?.focus();if(search&&typeof cursor==='number')search.setSelectionRange(cursor,cursor)};
+    el.querySelector('#class-search').oninput=rerenderWithFocus;
+    el.querySelector('#class-status').onchange=event=>{filters.status=event.target.value;page=1;render()};
+    el.querySelector('#class-from').onchange=event=>{filters.from=event.target.value;page=1;render()};
+    el.querySelector('#class-to').onchange=event=>{filters.to=event.target.value;page=1;render()};
+    el.querySelector('#clear-class-filters').onclick=()=>{Object.keys(filters).forEach(key=>filters[key]='');page=1;render()};
+    el.querySelector('#prev').onclick=()=>{page--;render()};
+    el.querySelector('#next').onclick=()=>{page++;render()};
+    el.querySelector('#add')?.addEventListener('click',()=>openForm(null));
+    el.querySelectorAll('[data-view]').forEach(button=>button.onclick=()=>view(rows.find(item=>String(item.id)===button.dataset.view)));
+    el.querySelectorAll('[data-edit]').forEach(button=>button.onclick=()=>openForm(rows.find(item=>String(item.id)===button.dataset.edit)));
+    el.querySelectorAll('[data-remove]').forEach(button=>button.onclick=async()=>{if(confirm('Xác nhận xử lý bản ghi này?')){try{await repo.classes.remove(u,button.dataset.remove);rows=await repo.classes.list(u);render();toast('Đã xử lý bản ghi.')}catch(error){toast(error.message)}}});
+  };
+  render();
+}
+crud=async(el,u,key)=>{if(key==='classes')return classesCrud(el,u);await baseCrud(el,u,key);if(key==='employees')enhanceEmployeeViews(el,u);};
 const baseDashboard=dashboard;
 dashboard=async(el,u)=>{el.classList.add('dashboard-content');return baseDashboard(el,u)};
 Object.assign(fieldLabels,{memberCode:'Mã hội viên',fullName:'Họ và tên',dateOfBirth:'Ngày sinh',emergencyContact:'Liên hệ khẩn cấp',employeeCode:'Mã nhân viên',employeeType:'Loại nhân sự',specialization:'Chuyên môn',biography:'Giới thiệu',packageCode:'Mã gói tập',durationDays:'Thời hạn (ngày)',sessionCount:'Tổng số buổi',classTypes:'Loại lớp áp dụng',classTypeIds:'Mã loại lớp',classCode:'Mã lớp',className:'Tên lớp',classType:'Loại lớp',classId:'Mã lớp',defaultCapacity:'Sức chứa mặc định',scheduleId:'Mã lịch học',startsAt:'Thời gian bắt đầu',endsAt:'Thời gian kết thúc',trainerName:'Huấn luyện viên',available:'Số chỗ còn lại',memberName:'Hội viên',packageName:'Tên gói tập',totalSessions:'Tổng số buổi',transactionCode:'Mã giao dịch',memberId:'Mã hội viên',packageId:'Mã gói tập',paidAt:'Thời điểm thanh toán',refundedAt:'Thời điểm hoàn tiền',createdAt:'Thời điểm tạo',updatedAt:'Thời điểm cập nhật',lateCancellation:'Hủy muộn',attendanceStatus:'Trạng thái điểm danh',markedAt:'Thời điểm điểm danh',entityType:'Loại dữ liệu',actorId:'Mã người thực hiện',actorEmail:'Email người thực hiện',beforeJson:'Dữ liệu trước thay đổi',afterJson:'Dữ liệu sau thay đổi'});
